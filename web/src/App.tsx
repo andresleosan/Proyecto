@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import Sales from './components/Sales';
+import CreateSale from './components/CreateSale';
 
-type Page = 'dashboard' | 'inventory' | 'sales';
+type Page = 'dashboard' | 'inventory' | 'sales' | 'create-sale';
 
 function App() {
   const [page, setPage] = useState<Page>('dashboard');
@@ -11,6 +12,7 @@ function App() {
   const pageComponent = useMemo(() => {
     if (page === 'inventory') return <Inventory />;
     if (page === 'sales') return <Sales />;
+    if (page === 'create-sale') return <CreateSale />;
     return <Dashboard />;
   }, [page]);
 
@@ -28,6 +30,9 @@ function App() {
             </button>
             <button onClick={() => setPage('sales')} className="hover:underline">
               Ventas
+            </button>
+            <button onClick={() => setPage('create-sale')} className="hover:underline">
+              Nueva Venta
             </button>
           </nav>
         </div>
