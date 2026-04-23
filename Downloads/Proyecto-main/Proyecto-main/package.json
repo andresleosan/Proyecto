@@ -1,0 +1,18 @@
+{
+  "name": "proyecto",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "seed:roles": "node scripts/seedRoles.js",
+    "seed:products": "node scripts/seedProducts.js",
+    "seed:all": "npm run seed:roles && npm run seed:products",
+    "start:web": "cd web && npx http-server -p 5173",
+    "docs": "echo 'See docs/run_instructions.md'"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.8.0"
+  }
+}
