@@ -6,10 +6,16 @@
     "seed:roles": "node scripts/seedRoles.js",
     "seed:products": "node scripts/seedProducts.js",
     "seed:all": "npm run seed:roles && npm run seed:products",
-    "start:web": "cd web && npx http-server -p 5173",
+    "start:web": "cd web && npm run dev",
+    "start:backend": "node backend/whatsapp-webhook.js",
+    "dev:all": "concurrently \"npm run start:web\" \"npm run start:backend\"",
+    "whatsapp:init": "node scripts/whatsapp-init.js",
     "docs": "echo 'See docs/run_instructions.md'"
   },
   "engines": {
     "node": ">=16"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

@@ -1,0 +1,294 @@
+/**
+ * Backend - Servidor Express para WhatsApp Integration
+ * 
+ * Coloca este archivo en: backend/whatsapp-webhook.js
+ * 
+ * Ejecutar:
+ * npm install express cors firebase-admin dotenv
+ * node backend/whatsapp-webhook.js
+ */
+
+const express = require('express');
+const admin = require('firebase-admin');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ============ INICIALIZAR FIREBASE ============
+let db;
+try {
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './serviceAccountKey.json';
+  const serviceAccount = require(serviceAccountPath);
+  
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  db = admin.firestore();
+  console.log('✅ Firebase initialized successfully');
+} catch (error) {
+  console.error('❌ Error initializing Firebase:', error.message);
+  process.exit(1);
+}
+
+// ============ FUNCIONES AUXILIARES ============
+
+/**
+ * Busca o crea una conversación
+ */
+async function getOrCreateConversation(phoneNumber, customerName) {
+  const conversationsRef = db.collection('whatsapp_conversations');
+  const snapshot = await conversationsRef.where('phoneNumber', '==', phoneNumber).get();
+
+  if (!snapshot.empty) {
+    return snapshot.docs[0].id;
+  }
+
+  // Crear nueva conversación
+  const newConv = await conversationsRef.add({
+    phoneNumber,
+    customerName: customerName || 'Cliente',
+    firstMessageDate: admin.firestore.Timestamp.now(),
+    lastMessageDate: admin.firestore.Timestamp.now(),
+    status: 'active',
+  });
+
+  return newConv.id;
+}
+
+/**
+ * Guarda un mensaje en Firestore
+ */
+async function saveMessage(conversationId, sender, messageText, messageType = 'text') {
+  await db.collection('whatsapp_messages').add({
+    conversationId,
+    sender,
+    message: messageText,
+    messageType,
+    timestamp: admin.firestore.Timestamp.now(),
+  });
+}
+
+/**
+ * Actualiza el lastMessageDate de una conversación
+ */
+async function updateConversationTimestamp(conversationId) {
+  await db.collection('whatsapp_conversations').doc(conversationId).update({
+    lastMessageDate: admin.firestore.Timestamp.now(),
+  });
+}
+
+/**
+ * Envía un mensaje a través de WhatsApp API
+ */
+async function sendWhatsAppMessage(phoneNumber, message) {
+  if (!process.env.WHATSAPP_API_TOKEN || !process.env.WHATSAPP_PHONE_NUMBER_ID) {
+    console.error('❌ WhatsApp credentials not configured');
+    throw new Error('WhatsApp credentials missing');
+  }
+
+  const url = `https://graph.instagram.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.WHATSAPP_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: phoneNumber,
+        type: 'text',
+        text: { body: message },
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ WhatsApp API error:', data);
+      throw new Error(data.error?.message || 'Failed to send message');
+    }
+
+    console.log('✅ Message sent:', data.messages[0].id);
+    return data;
+  } catch (error) {
+    console.error('❌ Error sending WhatsApp message:', error);
+    throw error;
+  }
+}
+
+// ============ RUTAS ============
+
+/**
+ * GET /api/webhooks/whatsapp - Verificación del webhook
+ */
+app.get('/api/webhooks/whatsapp', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  console.log(`🔍 Webhook verification: mode=${mode}, token=${token ? 'present' : 'missing'}`);
+
+  if (mode === 'subscribe' && token === process.env.WEBHOOK_VERIFY_TOKEN) {
+    console.log('✅ Webhook verified');
+    res.status(200).send(challenge);
+  } else {
+    console.error('❌ Invalid webhook verification token');
+    res.sendStatus(403);
+  }
+});
+
+/**
+ * POST /api/webhooks/whatsapp - Recibir mensajes
+ */
+app.post('/api/webhooks/whatsapp', async (req, res) => {
+  try {
+    const body = req.body;
+
+    // Validar estructura del webhook
+    if (body.object !== 'whatsapp_business_account') {
+      console.log('⏭️ Ignorando evento no-whatsapp:', body.object);
+      return res.sendStatus(200);
+    }
+
+    // Procesar cada evento
+    for (const entry of body.entry || []) {
+      for (const change of entry.changes || []) {
+        if (change.field === 'messages') {
+          const messages = change.value.messages || [];
+          const contacts = change.value.contacts || [];
+
+          for (const message of messages) {
+            const phoneNumber = message.from;
+            const messageText = message.text?.body || '[Mensaje sin texto]';
+            const customerName = contacts[0]?.profile?.name || 'Cliente';
+
+            console.log(`📨 Mensaje recibido de ${customerName} (${phoneNumber}): "${messageText}"`);
+
+            try {
+              // Obtener o crear conversación
+              const conversationId = await getOrCreateConversation(phoneNumber, customerName);
+
+              // Guardar mensaje
+              await saveMessage(conversationId, 'customer', messageText, 'text');
+
+              // Actualizar timestamp
+              await updateConversationTimestamp(conversationId);
+
+              // Respuesta automática (OPCIONAL)
+              if (process.env.AUTO_RESPONSE_ENABLED === 'true') {
+                const autoResponse = process.env.AUTO_RESPONSE_MESSAGE || 
+                  '👋 Hola, gracias por tu mensaje. Un administrador te responderá pronto.';
+                
+                await sendWhatsAppMessage(phoneNumber, autoResponse);
+              }
+            } catch (error) {
+              console.error('❌ Error processing message:', error);
+            }
+          }
+        }
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('❌ Webhook error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/whatsapp/send - Enviar mensaje desde admin
+ */
+app.post('/api/whatsapp/send', async (req, res) => {
+  try {
+    const { phoneNumber, message, conversationId } = req.body;
+
+    if (!phoneNumber || !message) {
+      return res.status(400).json({ error: 'phoneNumber and message required' });
+    }
+
+    console.log(`📤 Admin enviando mensaje a ${phoneNumber}: "${message}"`);
+
+    // Enviar mensaje
+    const result = await sendWhatsAppMessage(phoneNumber, message);
+
+    // Guardar mensaje en Firestore
+    if (conversationId) {
+      await saveMessage(conversationId, 'admin', message, 'text');
+      await updateConversationTimestamp(conversationId);
+    }
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('❌ Error sending message:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/health - Health check
+ */
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+/**
+ * POST /api/whatsapp/test - Test endpoint
+ */
+app.post('/api/whatsapp/test', async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ error: 'phoneNumber required' });
+    }
+
+    console.log(`🧪 Enviando mensaje de test a ${phoneNumber}`);
+
+    const result = await sendWhatsAppMessage(
+      phoneNumber,
+      '✅ Este es un mensaje de prueba desde SmartMarket Admin.'
+    );
+
+    res.json({ success: true, message: 'Test message sent', data: result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ MANEJO DE ERRORES ============
+
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled error:', err);
+  res.status(500).json({ error: err.message });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// ============ INICIAR SERVIDOR ============
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log('\n' + '='.repeat(50));
+  console.log('🚀 WhatsApp Webhook Server Started');
+  console.log('='.repeat(50));
+  console.log(`📍 Port: ${PORT}`);
+  console.log(`🌍 Webhook: http://localhost:${PORT}/api/webhooks/whatsapp`);
+  console.log(`💊 Health: http://localhost:${PORT}/api/health`);
+  console.log('='.repeat(50) + '\n');
+
+  if (!process.env.WHATSAPP_API_TOKEN) {
+    console.warn('⚠️  WARNING: WHATSAPP_API_TOKEN not configured\n');
+  }
+});
+
+module.exports = app;

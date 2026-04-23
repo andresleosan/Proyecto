@@ -3,8 +3,9 @@ import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import Sales from './components/Sales';
 import CreateSale from './components/CreateSale';
+import WhatsAppChat from './components/WhatsAppChat';
 
-type Page = 'dashboard' | 'inventory' | 'sales' | 'create-sale';
+type Page = 'dashboard' | 'inventory' | 'sales' | 'create-sale' | 'whatsapp';
 
 function App() {
   const [page, setPage] = useState<Page>('dashboard');
@@ -13,6 +14,7 @@ function App() {
     if (page === 'inventory') return <Inventory />;
     if (page === 'sales') return <Sales />;
     if (page === 'create-sale') return <CreateSale />;
+    if (page === 'whatsapp') return <WhatsAppChat />;
     return <Dashboard />;
   }, [page]);
 
@@ -33,6 +35,9 @@ function App() {
             </button>
             <button onClick={() => setPage('create-sale')} className="hover:underline">
               Nueva Venta
+            </button>
+            <button onClick={() => setPage('whatsapp')} className="hover:underline">
+              💬 WhatsApp
             </button>
           </nav>
         </div>
