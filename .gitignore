@@ -1,0 +1,39 @@
+# Node
+node_modules/
+# Web build outputs
+/web/dist/
+/dist/
+/build/
+/.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tgz
+*.bak
+*.tmp
+
+# Optional: lockfiles are kept to ensure reproducible installs; do not ignore
