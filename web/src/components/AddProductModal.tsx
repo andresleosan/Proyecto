@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import ImageUploadAI from './ImageUploadAI';
 import AudioUploadAI from './AudioUploadAI';
 
@@ -25,8 +25,43 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }: AddProductModalProps
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const modalRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (modalRef.current) {
+      setIsDragging(true);
+      const rect = modalRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging && modalRef.current) {
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      // Limitar el movimiento dentro de la pantalla
+      const maxX = window.innerWidth - (modalRef.current.offsetWidth || 0);
+      const maxY = window.innerHeight - (modalRef.current.offsetHeight || 0);
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -126,10 +161,28 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }: AddProductModalProps
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-96 overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white rounded-xl shadow-lg min-w-[600px] max-w-2xl w-full max-h-[85vh] overflow-y-auto"
+        style={isDragging ? {
+          position: 'fixed',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          width: 'auto',
+          margin: 0,
+        } : undefined}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-sf-primary text-white p-4 flex justify-between items-center">
+        <div 
+          className="sticky top-0 bg-sf-primary text-white p-4 flex justify-between items-center cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+        >
           <h2 className="text-xl font-bold">Agregar Producto</h2>
           <button
             onClick={onClose}
