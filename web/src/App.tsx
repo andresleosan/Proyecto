@@ -19,10 +19,10 @@ function App() {
   }, [page]);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800">
-      <header className="bg-indigo-600 text-white p-4 shadow-md">
+    <div className="min-h-screen bg-sf-light text-sf-text font-poppins">
+      <header className="bg-sf-primary text-white p-4 shadow-lg">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">🛒 SmartMarket Admin</h1>
+          <h1 className="text-2xl font-bold">🛒 Surti Fácil</h1>
           <nav className="space-x-3">
             <button onClick={() => setPage('dashboard')} className="hover:underline">
               Dashboard

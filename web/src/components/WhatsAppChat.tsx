@@ -161,52 +161,52 @@ export default function WhatsAppChat() {
   const totalSales = orders.reduce((sum, o) => sum + o.totalPrice, 0);
 
   const renderStatistics = () => (
-    <div className="p-6 bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="p-6 bg-gradient-to-br from-sf-light to-gray-50">
       <div className="grid grid-cols-2 gap-6 mb-8">
         {/* Total de conversaciones */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-          <p className="text-slate-600 text-sm font-semibold mb-2">Total Conversaciones</p>
-          <p className="text-4xl font-bold text-blue-600">{conversations.length}</p>
-          <p className="text-xs text-slate-500 mt-2">Clientes únicos</p>
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-sf-primary">
+          <p className="text-gray-600 text-sm font-semibold mb-2">Total Conversaciones</p>
+          <p className="text-4xl font-bold text-sf-primary">{conversations.length}</p>
+          <p className="text-xs text-gray-500 mt-2">Clientes únicos</p>
         </div>
 
         {/* Órdenes pendientes */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-          <p className="text-slate-600 text-sm font-semibold mb-2">Órdenes Pendientes</p>
+          <p className="text-gray-600 text-sm font-semibold mb-2">Órdenes Pendientes</p>
           <p className="text-4xl font-bold text-yellow-600">{pendingOrders.length}</p>
-          <p className="text-xs text-slate-500 mt-2">Por confirmar</p>
+          <p className="text-xs text-gray-500 mt-2">Por confirmar</p>
         </div>
 
         {/* Órdenes confirmadas */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <p className="text-slate-600 text-sm font-semibold mb-2">Órdenes Confirmadas</p>
+          <p className="text-gray-600 text-sm font-semibold mb-2">Órdenes Confirmadas</p>
           <p className="text-4xl font-bold text-green-600">{confirmedOrders.length}</p>
-          <p className="text-xs text-slate-500 mt-2">En procesamiento</p>
+          <p className="text-xs text-gray-500 mt-2">En procesamiento</p>
         </div>
 
         {/* Total de ventas */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
-          <p className="text-slate-600 text-sm font-semibold mb-2">Total Ventas WhatsApp</p>
-          <p className="text-3xl font-bold text-indigo-600">${totalSales.toLocaleString()}</p>
-          <p className="text-xs text-slate-500 mt-2">Todas las órdenes</p>
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-sf-cyan">
+          <p className="text-gray-600 text-sm font-semibold mb-2">Total Ventas WhatsApp</p>
+          <p className="text-3xl font-bold text-sf-cyan">${totalSales.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-2">Todas las órdenes</p>
         </div>
       </div>
 
       {/* Últimas órdenes */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Últimas Órdenes</h3>
+        <h3 className="text-lg font-bold text-sf-text mb-4">Últimas Órdenes</h3>
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {orders.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">Sin órdenes aún</p>
+            <p className="text-gray-500 text-center py-8">Sin órdenes aún</p>
           ) : (
             orders.slice(0, 10).map((order) => (
-              <div key={order.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div key={order.id} className="flex justify-between items-center p-3 bg-sf-light rounded-lg border border-gray-200">
                 <div>
-                  <p className="font-semibold text-slate-800">{order.customerName}</p>
-                  <p className="text-xs text-slate-500">{order.items.length} productos</p>
+                  <p className="font-semibold text-sf-text">{order.customerName}</p>
+                  <p className="text-xs text-gray-500">{order.items.length} productos</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-slate-800">${order.totalPrice}</p>
+                  <p className="font-bold text-sf-text">${order.totalPrice}</p>
                   <span className={`text-xs font-semibold px-2 py-1 rounded ${
                     order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
                   }`}>
@@ -222,30 +222,30 @@ export default function WhatsAppChat() {
   );
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-sf-light to-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-xl">
               💬
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">Gestor de WhatsApp</h1>
+            <h1 className="text-2xl font-bold text-sf-text">Gestor de WhatsApp</h1>
           </div>
-          <div className="text-sm text-slate-600">
+          <div className="text-sm text-gray-600">
             {conversations.length > 0 && `${conversations.length} conversaciones activas`}
           </div>
         </div>
       </div>
 
       {/* Tabs principales */}
-      <div className="flex border-b border-slate-200 bg-white px-6">
+      <div className="flex border-b border-gray-200 bg-white px-6">
         <button
           onClick={() => { setActiveTab('conversations'); setSelectedConversation(null); }}
           className={`px-6 py-4 font-semibold transition-all border-b-2 ${
             activeTab === 'conversations'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-slate-600 hover:text-slate-800'
+              ? 'border-sf-primary text-sf-primary'
+              : 'border-transparent text-gray-600 hover:text-sf-text'
           }`}
         >
           Conversaciones ({conversations.length})
@@ -254,8 +254,8 @@ export default function WhatsAppChat() {
           onClick={() => setActiveTab('orders')}
           className={`px-6 py-4 font-semibold transition-all border-b-2 ${
             activeTab === 'orders'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-slate-600 hover:text-slate-800'
+              ? 'border-sf-primary text-sf-primary'
+              : 'border-transparent text-gray-600 hover:text-sf-text'
           }`}
         >
           Órdenes ({pendingOrders.length})
@@ -264,8 +264,8 @@ export default function WhatsAppChat() {
           onClick={() => setActiveTab('statistics')}
           className={`px-6 py-4 font-semibold transition-all border-b-2 ${
             activeTab === 'statistics'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-slate-600 hover:text-slate-800'
+              ? 'border-sf-primary text-sf-primary'
+              : 'border-transparent text-gray-600 hover:text-sf-text'
           }`}
         >
           Estadísticas
